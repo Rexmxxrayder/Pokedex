@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokédex Flashcards</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- L'écran est coupé en deux : tout l'entraînement à gauche, le Pokédex à droite. -->
+  <div class="split">
+
+    <div class="side">
+      <header>
+        <h1>Pokédex Flashcards</h1>
+        <!-- Visible seulement sur téléphone : sans ça les réglages mangent
+             la moitié de l'écran avant qu'on voie la carte. -->
+        <button id="btn-reglages" class="filter-toggle reglages">⚙️ Réglages</button>
+        <div class="gens-row">
+          <span>Question</span>
+          <div class="gens">
+            <button class="show" data-show="img">Image</button>
+            <button class="show" data-show="name">Nom</button>
+            <button class="show" data-show="num">Numéro</button>
+          </div>
+        </div>
+        <div class="gens-row"><span>Générations</span><div id="gens" class="gens"></div></div>
+        <div class="gens-row filtre"><span>Filtre</span><div class="gens"><button id="btn-mult5" class="filter-toggle">Multiples de 5</button></div></div>
+        <div class="gens-row"><span>Mode</span><div class="gens"><button id="btn-ordre" class="filter-toggle">Dans l'ordre</button></div></div>
+        <div class="gens-row tester"><span>Tester</span><div id="test-gens" class="gens"></div></div>
+      </header>
+
+      <!-- Visible seulement pendant un test, à la place des réglages. -->
+      <div id="test-bar" class="test-bar"></div>
+
+      <section id="levels" class="levels"></section>
+
+      <main>
+        <div id="card" class="card" tabindex="0">
+          <div class="card-inner">
+            <div class="face front"></div>
+            <div class="face back"></div>
+          </div>
+        </div>
+
+        <div id="hint" class="hint"></div>
+
+        <div id="actions" class="actions">
+          <button id="btn-flip" class="flip">Retourner <kbd>↓</kbd></button>
+          <button id="btn-wrong" class="wrong">❌ Je ne savais pas <kbd>←</kbd></button>
+          <button id="btn-right" class="right">✅ Je savais <kbd>→</kbd></button>
+          <button id="btn-next" class="flip" hidden>Suivant <kbd>↓</kbd></button>
+        </div>
+      </main>
+
+      <footer>
+        <span id="counter"></span>
+        <button id="btn-export" class="link">Exporter</button>
+        <button id="btn-import" class="link">Importer</button>
+        <button id="btn-backup" class="link">Sauvegarder dans Vyper</button>
+        <button id="btn-reset" class="link">Réinitialiser la progression</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+        <span id="save-msg" class="save-msg"></span>
+      </footer>
+    </div>
+
+    <aside id="dex" class="dex">
+      <div class="dex-bar">
+        <input id="dex-search" type="text" placeholder="N° ou nom + Entrée" autocomplete="off">
+        <button id="dex-toggle" class="dex-toggle" title="Masquer / afficher les images et les noms">📖</button>
+      </div>
+      <div id="dex-list" class="dex-list"></div>
+    </aside>
+
+  </div>
+
+  <!-- Résultat d'un test, par-dessus tout le reste. -->
+  <div id="exam" class="exam" hidden></div>
+
+  <script>
+    // Repli des réglages sur petit écran. Volontairement ici et pas dans
+    // app.js : c'est de l'affichage, pas de la logique d'entraînement.
+    document.getElementById("btn-reglages").addEventListener("click", e => {
+      document.body.classList.toggle("reglages");
+      e.currentTarget.blur();
+    });
+  </script>
+  <script src="data.js"></script>
+  <script src="dex.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+:root {
+  --bg: #16181d;
+  --panel: #22252d;
+  --text: #eceef2;
+  --muted: #8b909c;
+  --red: #e3350d;
+  --green: #2fa86b;
+  --card: #fbfbfd;
+  --card-text: #1c1e24;
+  --lvl0: #e3350d; --lvl1: #f07a1a; --lvl2: #f5b820; --lvl3: #b5cf2a;
+  --lvl4: #4cc26f; --lvl5: #2fa8c8; --lvl6: #7a5cf0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+/* L'écran coupé en deux parts égales : entraînement à gauche, Pokédex à droite. */
+.split { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+.side {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px; overflow-y: auto; scrollbar-width: thin;
+}
+/* Le bouton de repli n'existe que sur petit écran. */
+.reglages { display: none; }
+
+header { text-align: center; }
+h1 { font-size: 1.4rem; margin: 4px 0 12px; }
+button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; }
+.gens-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.gens-row > span { color: var(--muted); font-size: .85rem; }
+.gens { display: flex; gap: 4px; }
+.gen, .test-gen { width: 34px; height: 34px; background: var(--panel); color: var(--muted); }
+.test-gen:hover { background: #3a3e48; color: var(--text); }
+.gen.active, .show.active { background: var(--text); color: var(--bg); font-weight: 700; }
+.show { padding: 6px 14px; height: 34px; background: var(--panel); color: var(--muted); }
+.filter-toggle { padding: 6px 14px; height: 34px; background: var(--panel); color: var(--muted); }
+.filter-toggle.active { background: var(--text); color: var(--bg); font-weight: 700; }
+
+/* ===== Test d'une génération ===== */
+/* Pendant un test, les réglages et les compteurs sont retirés : on ne doit pas
+   pouvoir changer la sélection au milieu d'une mesure. */
+.test-bar { display: none; }
+body.testing .test-bar {
+  display: flex; align-items: center; gap: 14px; margin: 18px 0;
+  background: var(--panel); border-radius: 10px; padding: 8px 14px;
+  border-bottom: 3px solid var(--muted);
+}
+body.testing .test-bar span { color: var(--muted); font-variant-numeric: tabular-nums; }
+body.testing .gens-row, body.testing #levels { display: none; }
+
+/* Mode "dans l'ordre" : le filtre multiples de 5 ne s'y applique pas (avancer
+   d'un cran est tout l'intérêt), et lancer un test n'aurait pas de sens. On
+   retire les deux lignes plutôt que de laisser croire qu'elles agissent. */
+body.ordre .gens-row.filtre, body.ordre .gens-row.tester { display: none; }
+
+.exam {
+  position: fixed; inset: 0; z-index: 10;
+  background: rgba(10,11,14,.82);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.exam[hidden] { display: none; }
+.exam-box {
+  background: var(--panel); border-radius: 16px; padding: 24px;
+  width: min(560px, 100%); max-height: 100%; overflow-y: auto; scrollbar-width: thin;
+}
+.exam-box h2 { margin: 0 0 6px; font-size: 1.3rem; }
+.exam-box h2.ok { color: var(--green); }
+.exam-box h2.ko, .exam-box .ko { color: var(--red); }
+.exam-score { margin: 0 0 14px; color: var(--muted); }
+.exam-score b { color: var(--text); font-size: 1.1rem; }
+.exam-sub { color: var(--muted); font-size: .85rem; margin: 16px 0 6px; }
+.exam-list { list-style: none; margin: 0; padding: 0; }
+.exam-list li { display: flex; align-items: baseline; gap: 8px; font-size: .9rem; padding: 4px 0; border-bottom: 1px solid #2e323b; }
+.exam-num { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 68px; }
+.exam-list em { margin-left: auto; color: var(--muted); font-style: normal; font-size: .8rem; }
+.exam-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.exam-actions button { padding: 10px 16px; color: #fff; }
+
+.levels { display: flex; gap: 6px; margin: 18px 0; flex-wrap: wrap; justify-content: center; }
+.lvl { background: var(--panel); border-radius: 10px; padding: 6px 10px; min-width: 52px; text-align: center; border-bottom: 3px solid var(--c, #555); }
+.lvl b { display: block; font-size: 1.1rem; }
+.lvl span { font-size: .75rem; color: var(--muted); }
+.unseen { --c: #555; }
+/* Une couleur par niveau, définie une seule fois : sert aux compteurs, au
+   bandeau du dos de carte et à sa bordure. */
+.l0 { --c: var(--lvl0); } .l1 { --c: var(--lvl1); } .l2 { --c: var(--lvl2); } .l3 { --c: var(--lvl3); }
+.l4 { --c: var(--lvl4); } .l5 { --c: var(--lvl5); } .l6 { --c: var(--lvl6); }
+
+main { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
+.card { width: min(340px, 100%); height: 420px; perspective: 1200px; cursor: pointer; outline: none; }
+.card-inner { position: relative; width: 100%; height: 100%; transition: transform .35s ease; transform-style: preserve-3d; }
+.card.flipped .card-inner { transform: rotateY(180deg); }
+.card.no-anim .card-inner { transition: none; }
+.face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  background: var(--card); color: var(--card-text);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px;
+}
+/* La bordure et le bandeau du dos prennent la couleur du niveau de la carte,
+   posée par paintFaces() via --lvl-color. */
+.back { transform: rotateY(180deg); border: 3px solid var(--lvl-color, var(--red)); }
+.lvl-tag {
+  position: absolute; top: 10px; left: 0; right: 0; text-align: center;
+  font-size: .95rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--lvl-color, var(--red));
+}
+.card.flipped { cursor: default; }
+.face img { width: 240px; height: 240px; object-fit: contain; user-select: none; }
+.name { font-size: 1.8rem; font-weight: 700; margin-top: 10px; text-align: center; }
+.num { font-size: 4.2rem; font-weight: 800; }
+/* face qui montre plusieurs éléments à la fois : on resserre */
+.face.multi img { width: 190px; height: 190px; }
+.face.multi .name { font-size: 1.5rem; margin-top: 4px; }
+.face.multi .num { font-size: 2.4rem; margin-top: 6px; }
+.gen-tag { font-size: .9rem; color: #777; margin-top: 6px; }
+
+/* La ligne sous la carte : ce qui se passera selon la réponse, ou la consigne
+   de la phase de présentation. Vide tant que la carte n'est pas retournée. */
+.hint { min-height: 1.4em; color: var(--muted); font-size: .95rem; text-align: center; }
+
+.actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.actions button { padding: 12px 20px; font-size: 1rem; color: #fff; }
+.flip { background: var(--panel); }
+.wrong { background: var(--red); }
+.right { background: var(--green); }
+kbd { font-size: .7rem; opacity: .7; margin-left: 6px; border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+
+/* ===== Panneau Pokédex à droite ===== */
+.dex {
+  background: var(--panel);
+  /* peu de marge à droite : l'espace est mis à l'intérieur, entre les cartes
+     et l'ascenseur, plutôt qu'au-delà de l'ascenseur */
+  padding: 12px 6px 12px 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  border-left: 1px solid #2e323b;
+  min-height: 0; /* sinon la grille déborde au lieu de défiler */
+}
+/* La barre du haut : recherche, et le bouton de masquage juste à sa droite. */
+.dex-bar { display: flex; gap: 8px; padding-right: 8px; }
+.dex-bar input {
+  flex: 1; font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #3a3e48;
+  background: var(--bg); color: var(--text); outline: none;
+}
+.dex-bar input:focus { border-color: var(--red); }
+/* Une seule icône, deux couleurs : allumé = images et noms affichés. */
+.dex-toggle {
+  flex-shrink: 0; width: 40px; font-size: 1.1rem;
+  background: #3a3e48; color: var(--text);
+  transition: background .15s;
+}
+.dex-toggle.active { background: var(--red); }
+
+/* Exactement 5 colonnes : un multiple de 5 est donc toujours tout à droite. */
+.dex-list {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 8px;       /* l'espace demandé entre la 5e colonne et l'ascenseur */
+  /* Les rangées se calent toujours en haut : jamais de carte coupée en deux.
+     Le recalage après un glissement est animé par le navigateur. Pas de
+     scroll-behavior:smooth ici : il ferait durer plusieurs secondes les sauts
+     de plusieurs centaines de rangées déclenchés au retournement d'une carte. */
+  scroll-snap-type: y mandatory;
+}
+/* Quatre rangées pile dans la hauteur disponible (3 écarts de 8 px entre elles),
+   quelle que soit la taille de l'écran. S'applique aussi en mode masqué : la
+   grille reste du 5 × 4 à l'identique, seules les cases se vident. */
+.dex-list { grid-auto-rows: calc((100% - 24px) / 4); }
+
+/* Mode "numéros seuls" : la carte garde sa taille, mais elle est grisée et ne
+   montre plus que son numéro — qui, lui, ne révèle rien. Pas de silhouette non
+   plus : une ombre de Pokémon reste un indice. */
+.dex-list.masque .dex-item { background: #1b1d23; position: relative; }
+.dex-list.masque .dex-name { display: none; }
+/* L'image est rendue invisible mais reste en page (sortie du flux pour que le
+   numéro se centre). Avec display:none, le navigateur ne la téléchargerait pas
+   du tout, et la révélation afficherait des cases vides le temps du chargement. */
+.dex-list.masque img { visibility: hidden; position: absolute; inset: 6px 4px; }
+.dex-list.masque .dex-num { font-size: 1.4rem; color: var(--muted); }
+.dex-list.masque .dex-item.current .dex-num { color: var(--text); }
+/* Même disposition que la carte principale : image, nom, numéro. */
+.dex-item {
+  scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--bg); border: 2px solid transparent; border-radius: 10px;
+  padding: 6px 4px;
+  overflow: hidden;
+}
+.dex-item.current { border-color: var(--red); background: rgba(227,53,13,.12); }
+/* L'image prend ce qui reste une fois le nom et le numéro placés : ils restent
+   donc toujours lisibles, même sur la rangée du bas. */
+.dex-item img { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+.dex-name { font-weight: 600; font-size: .85rem; text-align: center; line-height: 1.15; }
+.dex-num { color: var(--muted); font-size: .78rem; }
+
+footer { margin-top: auto; padding-top: 24px; color: var(--muted); font-size: .8rem; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: center; }
+#counter { white-space: nowrap; }
+.save-msg { color: var(--green); }
+.save-msg.ko { color: var(--red); }
+.link { background: none; color: var(--muted); text-decoration: underline; padding: 0; font-size: .85rem; }
+
+/* ===== Téléphone (2026-10-29) =====
+   L'appli a été pensée pour un grand écran coupé en deux. Sur un téléphone,
+   tout s'empile : avant cette passe, il fallait franchir ~360 px de réglages
+   pour voir la carte, et les boutons de réponse tombaient hors de l'écran.
+   Ici on ne touche QUE la mise en page — aucune règle d'apprentissage, aucune
+   donnée. Le gel de l'appli demandé pour la semaine d'entraînement tient. */
+@media (max-width: 900px) {
+  body { height: auto; overflow: visible; }
+  .split { grid-template-columns: 1fr; height: auto; }
+}
+
+@media (max-width: 760px) {
+  .side { padding: 10px; }
+  h1 { font-size: 1.1rem; margin: 2px 0 6px; }
+
+  /* Les réglages sont repliés par défaut et s'ouvrent au bouton ⚙️. */
+  .reglages { display: inline-block; margin-bottom: 4px; }
+  header .gens-row { display: none; }
+  body.reglages header .gens-row { display: flex; }
+
+  .levels { gap: 4px; margin: 10px 0; }
+  .lvl { min-width: 0; padding: 4px 7px; }
+  .lvl b { font-size: .95rem; }
+  .lvl span { font-size: .62rem; }
+
+  /* La carte et les boutons doivent tenir ensemble dans un écran. */
+  main { gap: 10px; }
+  .card { height: 46vh; min-height: 240px; }
+  .face { padding: 12px; }
+  .face img { width: 44vw; height: 44vw; max-width: 200px; max-height: 200px; }
+  .num { font-size: 3rem; }
+  .name { font-size: 1.4rem; }
+  .face.multi img { width: 34vw; height: 34vw; }
+  .face.multi .num { font-size: 1.7rem; }
+  .face.multi .name { font-size: 1.1rem; }
+  .lvl-tag { font-size: .8rem; }
+
+  .actions { gap: 8px; width: 100%; }
+  .actions button { padding: 12px 10px; font-size: .9rem; flex: 1; }
+  kbd { display: none; } /* pas de clavier sur un téléphone */
+  .hint { font-size: .85rem; }
+
+  /* Empilé, le panneau n'a plus de hauteur propre : les rangées calculées en
+     pourcentage s'effondreraient. On lui en donne une. */
+  .dex { height: 72vh; padding: 10px 6px 10px 10px; border-left: 0; border-top: 1px solid #2e323b; }
+  .dex-name { font-size: .7rem; }
+  .dex-num { font-size: .68rem; }
+  .dex-list.masque .dex-num { font-size: 1rem; }
+
+  footer { padding-top: 14px; gap: 10px; font-size: .75rem; }
+  #counter { white-space: normal; }
+}
