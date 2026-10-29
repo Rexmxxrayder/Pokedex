@@ -474,7 +474,9 @@ document.querySelectorAll(".show").forEach(b => b.addEventListener("click", () =
 // Le localStorage est propre à un navigateur : passer de Chrome à Firefox perd
 // tout. Ces trois boutons permettent de transporter la progression à la main.
 const SAVE_KEYS = ["pkfc-all", "pkfc-gens", "pkfc-front", "pkfc-mult5", "pkfc-ordre"];
-const BACKUP_FILE = "progression.json";
+// L'appli est autonome depuis le 2026-10-29 : elle ne connaît plus les chemins
+// de Vyper. Le serveur local, s'il existe, décide seul où il range la
+// sauvegarde ; ici on se contente de l'envoyer.
 
 function collectSave() {
   const data = { app: "pokedex-flashcards", version: 1, date: new Date().toISOString() };
@@ -542,7 +544,7 @@ $("#btn-backup").addEventListener("click", async () => {
       body: JSON.stringify(collectSave()),
     });
     if (!res.ok) throw new Error(await res.text());
-    flash(`Sauvegardé dans Tools/Internal/Pokemon/${BACKUP_FILE}.`);
+    flash("Progression sauvegardée dans Vyper.");
   } catch (err) {
     flash("Serveur local injoignable — ouvre l'appli via start-vyper.vbs, ou utilise Exporter.", false);
   }
